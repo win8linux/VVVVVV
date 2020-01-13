@@ -10,10 +10,17 @@
 #include <SDL.h>
 #include <physfs.h>
 
+#include "tinyxml.h"
+
 #if defined(_WIN32)
 #include <windows.h>
 #include <shlobj.h>
-#define mkdir(a, b) CreateDirectory(a, NULL)
+int mkdir(char* path, int mode)
+{
+	WCHAR utf16_path[MAX_PATH];
+	MultiByteToWideChar(CP_UTF8, 0, path, -1, utf16_path, MAX_PATH);
+	return CreateDirectoryW(utf16_path, NULL);
+}
 #define VNEEDS_MIGRATION (mkdirResult != 0)
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__HAIKU__)
 #include <sys/stat.h>
@@ -37,8 +44,8 @@ int FILESYSTEM_init(char *argvZero)
 	char output[MAX_PATH];
 	int mkdirResult;
 
-	PHYSFS_permitSymbolicLinks(1);
 	PHYSFS_init(argvZero);
+	PHYSFS_permitSymbolicLinks(1);
 
 	/* Determine the OS user directory */
 	PLATFORM_getOSDirectory(output);
@@ -48,6 +55,7 @@ int FILESYSTEM_init(char *argvZero)
 
 	/* Mount our base user directory */
 	PHYSFS_mount(output, NULL, 1);
+	PHYSFS_setWriteDir(output);
 	printf("Base directory: %s\n", output);
 
 	/* Create save directory */
@@ -131,6 +139,35 @@ void FILESYSTEM_freeMemory(unsigned char **mem)
 	*mem = NULL;
 }
 
+bool FILESYSTEM_saveTiXmlDocument(const char *name, TiXmlDocument *doc)
+{
+	/* TiXmlDocument.SaveFile doesn't account for Unicode paths, PHYSFS does */
+	TiXmlPrinter printer;
+	doc->Accept(&printer);
+	PHYSFS_File* handle = PHYSFS_openWrite(name);
+	if (handle == NULL)
+	{
+		return false;
+	}
+	PHYSFS_writeBytes(handle, printer.CStr(), printer.Size());
+	PHYSFS_close(handle);
+	return true;
+}
+
+bool FILESYSTEM_loadTiXmlDocument(const char *name, TiXmlDocument *doc)
+{
+	/* TiXmlDocument.SaveFile doesn't account for Unicode paths, PHYSFS does */
+	unsigned char *mem = NULL;
+	FILESYSTEM_loadFileToMemory(name, &mem, NULL);
+	if (mem == NULL)
+	{
+		return false;
+	}
+	doc->Parse((const char*)mem);
+	FILESYSTEM_freeMemory(&mem);
+	return true;
+}
+
 std::vector<std::string> FILESYSTEM_getLevelDirFileNames()
 {
 	std::vector<std::string> list;
@@ -158,7 +195,9 @@ void PLATFORM_getOSDirectory(char* output)
 {
 #ifdef _WIN32
 	/* This block is here for compatibility, do not touch it! */
-	SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, output);
+	WCHAR utf16_path[MAX_PATH];
+	SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, utf16_path);
+	WideCharToMultiByte(CP_UTF8, 0, utf16_path, -1, output, MAX_PATH, NULL, NULL);
 	strcat(output, "\\VVVVVV\\");
 #else
 	strcpy(output, PHYSFS_getPrefDir("distractionware", "VVVVVV"));
