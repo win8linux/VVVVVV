@@ -91,7 +91,9 @@ SET(VVV_SRC
 	src/UtilityClass.cpp
 	src/WarpClass.cpp
 	src/main.cpp
+	src/Network.c
 	src/SteamNetwork.c
+	src/GOGNetwork.c
 )
 SET(XML_SRC
 	../third_party/tinyxml/tinystr.cpp
@@ -109,6 +111,7 @@ SET(PFS_SRC
 	../third_party/physfs/physfs_platform_posix.c
 	../third_party/physfs/physfs_platform_unix.c
 	../third_party/physfs/physfs_platform_windows.c
+	../third_party/physfs/physfs_platform_haiku.cpp
 )
 IF(APPLE)
 	# Are you noticing a pattern with this Apple crap yet?
@@ -168,4 +171,10 @@ IF(APPLE)
 	FIND_LIBRARY(FOUNDATION NAMES Foundation)
 	FIND_LIBRARY(IOKIT NAMES IOKit)
 	TARGET_LINK_LIBRARIES(VVVVVV objc ${IOKIT} ${FOUNDATION})
+ENDIF()
+# But hey, also some Haiku crap
+IF(HAIKU)
+	FIND_LIBRARY(BE_LIBRARY be)
+	FIND_LIBRARY(ROOT_LIBRARY root)
+	TARGET_LINK_LIBRARIES(VVVVVV ${BE_LIBRARY} ${ROOT_LIBRARY})
 ENDIF()
