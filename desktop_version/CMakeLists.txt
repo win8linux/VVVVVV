@@ -54,7 +54,7 @@ ENDIF()
 INCLUDE_DIRECTORIES(
 	src
 	../third_party/tinyxml
-	../third_party/physfs
+	# ../third_party/physfs									# Omits usage of static library
 	../third_party/lodepng
 )
 
@@ -137,11 +137,11 @@ ENDIF()
 
 # Library information
 ADD_LIBRARY(tinyxml-static STATIC ${XML_SRC})
-ADD_LIBRARY(physfs-static STATIC ${PFS_SRC} ${PFSP_SRC})
+# ADD_LIBRARY(physfs-static STATIC ${PFS_SRC} ${PFSP_SRC})			# More of preventing static PhysicsFS library from being used
 ADD_LIBRARY(lodepng-static STATIC ${PNG_SRC})
 
 # Static Dependencies
-TARGET_LINK_LIBRARIES(VVVVVV physfs-static tinyxml-static lodepng-static)
+TARGET_LINK_LIBRARIES(VVVVVV physfs tinyxml-static lodepng-static)	# Use system's PhysicsFS instead of static one
 
 # SDL2 Dependency (Detection pulled from FAudio)
 if (DEFINED SDL2_INCLUDE_DIRS AND DEFINED SDL2_LIBRARIES)
