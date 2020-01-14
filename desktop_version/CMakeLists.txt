@@ -170,3 +170,13 @@ IF(APPLE)
 	FIND_LIBRARY(IOKIT NAMES IOKit)
 	TARGET_LINK_LIBRARIES(VVVVVV objc ${IOKIT} ${FOUNDATION})
 ENDIF()
+
+# Haiku bits
+if(HAIKU)
+    # We add this explicitly, since we don't want CMake to think this
+    #  is a C++ project unless we're on Haiku.
+    set(PHYSFS_CPP_SRCS src/physfs_platform_haiku.cpp)
+    find_library(BE_LIBRARY be)
+    find_library(ROOT_LIBRARY root)
+    set(OPTIONAL_LIBRARY_LIBS ${OPTIONAL_LIBRARY_LIBS} ${BE_LIBRARY} ${ROOT_LIBRARY})
+endif()
