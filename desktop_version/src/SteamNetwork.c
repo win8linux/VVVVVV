@@ -12,9 +12,11 @@
 #if defined(_WIN32)
 #define STEAM_LIBRARY "steam_api.dll"
 #elif defined(__APPLE__)
+
 #define STEAM_LIBRARY "libsteam_api.dylib"
 #elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__HAIKU__)
 #define STEAM_LIBRARY "libsteam_api.so"
+
 #else
 #error STEAM_LIBRARY: Unrecognized platform!
 #endif
@@ -97,6 +99,7 @@ int32_t STEAM_init()
 {
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__HAIKU__)
 	return 0;
+
 #endif
 	intptr_t steamClient;
 	int32_t steamUser, steamPipe;
