@@ -11,7 +11,7 @@ The engine depends solely on [SDL2](https://libsdl.org/) and
 are statically linked into the engine. The development libraries for Windows can
 be downloaded from their respective websites, Linux developers can find the dev
 libraries from their respective repositories, and macOS developers should
-compile and install from source.
+compile and install from source (including libogg/libvorbis/libvorbisfile).
 
 Steamworks support is included and the DLL is loaded dynamically, you do not
 need the SDK headers and there is no special Steam or non-Steam version. The
@@ -56,6 +56,11 @@ file, [get in touch](http://distractionware.com/email/)!)
 
 A Word About Compiler Quirks
 ----------------------------
+
+_(Note: This section only applies to version 2.2 of the source code, which is
+the initial commit of this repository. Since then, much hard work has been put
+in to fix many undefined behaviors. If you're compiling the latest version of
+the source code, ignore this section.)_
 
 This engine is _super_ fussy about optimization levels and runtime checks. In
 particular, the Windows version _absolutely positively must_ be compiled in

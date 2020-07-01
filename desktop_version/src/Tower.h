@@ -15,17 +15,11 @@ public:
 
     int miniat(int xp, int yp, int yoff);
 
-    void fillbackground(std::vector<std::string>& tmap);
-
-    void fillminitower(std::vector<std::string>& tmap);
-
     void loadminitower1();
 
     void loadminitower2();
 
     void loadbackground();
-
-    void fillcontents(std::vector<std::string>& tmap);
 
     void loadmap();
 
@@ -40,8 +34,6 @@ public:
     std::vector<int> vmult;
 
     bool minitowermode;
-    int i;
-    int k;
 };
 
 

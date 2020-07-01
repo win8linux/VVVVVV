@@ -1,84 +1,90 @@
+#if !defined(NO_CUSTOM_LEVELS)
+
 #ifndef EDITOR_H
 #define EDITOR_H
 
 #include <vector>
 #include <string>
 #include "Script.h"
-
-class KeyPoll; class Graphics; class Game; class mapclass; class entityclass; class UtilityClass;
-
+#include "Graphics.h"
 
 class edentities{
 public:
-	int x, y, t;
-	//parameters
-	int p1, p2, p3, p4, p5, p6;
-	std::string scriptname;
+  int x, y, t;
+  //parameters
+  int p1, p2, p3, p4, p5, p6;
+  std::string scriptname;
 };
 
 
 class edlevelclass{
 public:
   edlevelclass();
-	int tileset, tilecol;
-	std::string roomname;
-	int warpdir;
-	int platx1, platy1, platx2, platy2, platv;
-	int enemyx1, enemyy1, enemyx2, enemyy2, enemytype;
-	int directmode;
+  int tileset, tilecol;
+  std::string roomname;
+  int warpdir;
+  int platx1, platy1, platx2, platy2, platv;
+  int enemyx1, enemyy1, enemyx2, enemyy2, enemytype;
+  int directmode;
 };
 
 struct LevelMetaData
 {
-	std::string title;
-	std::string creator;
-	std::string Desc1;
-	std::string Desc2;
-	std::string Desc3;
-	std::string website;
-	std::string filename;
+  std::string title;
+  std::string creator;
+  std::string Desc1;
+  std::string Desc2;
+  std::string Desc3;
+  std::string website;
+  std::string filename;
 
-	std::string modifier;
-	std::string timeCreated;
-	std::string timeModified;
+  std::string modifier;
+  std::string timeCreated;
+  std::string timeModified;
 
-	int version;
+  int version;
 };
 
 
-extern edentities edentity[3000];
-extern scriptclass script;
+extern std::vector<edentities> edentity;
 
 class EditorData
 {
-	public:
+  public:
 
-	static EditorData& GetInstance()
-	{
-		static EditorData  instance; // Guaranteed to be destroyed.
-		// Instantiated on first use.
-		return instance;
-	}
+  static EditorData& GetInstance()
+  {
+    static EditorData  instance; // Guaranteed to be destroyed.
+    // Instantiated on first use.
+    return instance;
+  }
 
 
-	int numedentities;
-	std::string title;
-	std::string creator;
+  std::string title;
+  std::string creator;
 
-	std::string modifier;
-	std::string timeCreated;
-	std::string timeModified;
+  std::string modifier;
+  std::string timeCreated;
+  std::string timeModified;
 
 private:
 
 
-	EditorData():
-	numedentities(0)
-	{
-	}
+  EditorData()
+  {
+  }
 
 };
 
+struct GhostInfo {
+    int rx; // game.roomx-100
+    int ry; // game.roomy-100
+    int x; // .xp
+    int y; // .yp
+    int col; // .colour
+    Uint32 realcol;
+    int frame; // .drawframe
+};
 
 class editorclass{
   //Special class to handle ALL editor variables locally
@@ -88,17 +94,18 @@ class editorclass{
   std::string Desc1;
   std::string Desc2;
   std::string Desc3;
-	std::string website;
+  std::string website;
 
   std::vector<std::string> directoryList;
   std::vector<LevelMetaData> ListOfMetaData;
 
+  void loadZips();
   void getDirectoryData();
   bool getLevelMetaData(std::string& filename, LevelMetaData& _data );
 
   void saveconvertor();
   void reset();
-  void loadlevel(int rxi, int ryi);
+  std::vector<int> loadlevel(int rxi, int ryi);
 
   void placetile(int x, int y, int t);
 
@@ -127,9 +134,9 @@ class editorclass{
 
   int backmatch(int x, int y);
 
-  void load(std::string& _path);
-  void save(std::string& _path);
-  void generatecustomminimap(Graphics& dwgfx, mapclass& map);
+  bool load(std::string& _path);
+  bool save(std::string& _path);
+  void generatecustomminimap();
   int edgetile(int x, int y);
   int warpzoneedgetile(int x, int y);
   int outsideedgetile(int x, int y);
@@ -141,26 +148,26 @@ class editorclass{
   int findtrinket(int t);
   int findcrewmate(int t);
   int findwarptoken(int t);
-  void countstuff();
-  void findstartpoint(Game& game);
-  void weirdloadthing(std::string t);
+  void findstartpoint();
   int getlevelcol(int t);
   int getenemycol(int t);
   int entcol;
+  Uint32 entcolreal;
 
   //Colouring stuff
   int getwarpbackground(int rx, int ry);
 
   std::vector<std::string> getLevelDirFileNames( );
-  std::vector <int> swapmap;
   std::vector <int> contents;
   std::vector <int> vmult;
-  int numtrinkets;
-  int numcrewmates;
+  int numtrinkets();
+  int numcrewmates();
   edlevelclass level[400]; //Maxwidth*maxheight
+  int kludgewarpdir[400]; //Also maxwidth*maxheight
 
   int temp;
   int notedelay;
+  int oldnotedelay;
   std::string note;
   std::string keybuffer;
   std::string filename;
@@ -173,13 +180,13 @@ class editorclass{
   int entframe, entframedelay;
 
   bool roomtextmod;
-  int roomtextent;
 
   bool scripttextmod;
-  int scripttextent;
+  int textent;
   int scripttexttype;
+  std::string oldenttext;
 
-  bool xmod, zmod, spacemod, warpmod, roomnamemod, textentry, savemod, loadmod;
+  bool xmod, zmod, cmod, vmod, bmod, hmod, spacemod, warpmod, roomnamemod, textentry, savemod, loadmod;
   bool titlemod, creatormod, desc1mod, desc2mod, desc3mod, websitemod;
 
   int roomnamehide;
@@ -206,9 +213,8 @@ class editorclass{
 
   bool scripteditmod;
   int scripthelppage, scripthelppagedelay;
-  std::string sb[500];
+  std::vector<std::string> sb;
   std::string sbscript;
-  int sblength;
   int sbx, sby;
   int pagey;
 
@@ -225,21 +231,26 @@ class editorclass{
   void clearscriptbuffer();
   void gethooks();
   bool checkhook(std::string t);
-  std::string hooklist[500];
-  int numhooks;
+  std::vector<std::string> hooklist;
 
   int hookmenupage, hookmenu;
 
   //Direct Mode variables
   int dmtile;
   int dmtileeditor;
+
+  Uint32 getonewaycol(const int rx, const int ry);
+  Uint32 getonewaycol();
+  bool onewaycol_override;
+
+  int returneditoralpha;
+  int oldreturneditoralpha;
+
+  std::vector<GhostInfo> ghosts;
+  int currentghosts;
 };
 
 void addedentity(int xp, int yp, int tp, int p1=0, int p2=0, int p3=0, int p4=0, int p5=320, int p6=240);
-
-void naddedentity(int xp, int yp, int tp, int p1=0, int p2=0, int p3=0, int p4=0, int p5=320, int p6=240);
-
-void copyedentity(int a, int b);
 
 void removeedentity(int t);
 
@@ -248,15 +259,20 @@ int edentat(int xp, int yp);
 
 bool edentclear(int xp, int yp);
 
-void fillbox(Graphics& dwgfx, int x, int y, int x2, int y2, int c);
+void fillbox(int x, int y, int x2, int y2, int c);
 
-void fillboxabs(Graphics& dwgfx, int x, int y, int x2, int y2, int c);
+void fillboxabs(int x, int y, int x2, int y2, int c);
 
-void editorrender(KeyPoll& key, Graphics& dwgfx, Game& game,  mapclass& map, entityclass& obj, UtilityClass& help);
+#if !defined(NO_EDITOR)
+void editorrender();
 
-void editorlogic(KeyPoll& key, Graphics& dwgfx, Game& game, entityclass& obj,  musicclass& music, mapclass& map, UtilityClass& help);
+void editorlogic();
 
-void editorinput(KeyPoll& key, Graphics& dwgfx, Game& game, mapclass& map,
-                 entityclass& obj, UtilityClass& help, musicclass& music);
+void editorinput();
+#endif
+
+extern editorclass ed;
 
 #endif /* EDITOR_H */
+
+#endif /* NO_CUSTOM_LEVELS */

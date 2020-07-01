@@ -7,6 +7,12 @@
 #include <string>
 #include <vector>
 
+struct Roomtext
+{
+    int x, y;
+    std::string text;
+};
+
 class otherlevelclass
 {
 public:
@@ -20,19 +26,16 @@ public:
         ACTIVITY
     };
 
-    otherlevelclass();
     void addline(std::string t);
-    std::vector<std::string> loadlevel(int rx, int ry , Game& game, entityclass& obj);
+    std::vector<int> loadlevel(int rx, int ry);
 
     std::string roomname;
 
     int roomtileset;
-    int i;
 
     // roomtext thing in other level
     bool roomtexton;
-    int roomtextx, roomtexty, roomtextnumlines;
-    std::vector<std::string> roomtext;
+    std::vector<Roomtext> roomtext;
 };
 
 #endif /* OTHERLEVEL_H */

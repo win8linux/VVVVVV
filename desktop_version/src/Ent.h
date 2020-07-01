@@ -1,18 +1,28 @@
 #ifndef ENT_H
 #define ENT_H
 
+#include "Graphics.h"
+
+#define		rn( rx,  ry) ((rx) + ((ry) * 100))
+
 class entclass
 {
 public:
     entclass();
 
-    void clear();
-
     bool outside();
+
+    void setenemy(int t);
+
+    void setenemyroom(int rx, int ry);
+
+    void settreadmillcolour(int rx, int ry);
+
+    void updatecolour();
 
 public:
     //Fundamentals
-    bool active, invis;
+    bool invis;
     int type, size, tile, rule;
     int state, statedelay;
     int behave, animate;
@@ -39,6 +49,8 @@ public:
     //Animation
     int framedelay, drawframe, walkingframe, dir, actionframe;
     int yp;int xp;
+
+    Uint32 realcol;
 };
 
 #endif /* ENT_H */

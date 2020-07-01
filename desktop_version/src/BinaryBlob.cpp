@@ -98,13 +98,31 @@ bool binaryBlob::unPackBinary(const char* name)
 
 	for (int i = 0; i < 128; i += 1)
 	{
-		if (m_headers[i].valid)
+		/* Name can be stupid, just needs to be terminated */
+		m_headers[i].name[47] = '\0';
+
+		if (m_headers[i].valid & ~0x1 || !m_headers[i].valid)
 		{
-			PHYSFS_seek(handle, offset);
-			m_memblocks[i] = (char*) malloc(m_headers[i].size);
-			PHYSFS_readBytes(handle, m_memblocks[i], m_headers[i].size);
-			offset += m_headers[i].size;
+			m_headers[i].valid = false;
+			continue; /* Must be EXACTLY 1 or 0 */
 		}
+		if (m_headers[i].size < 1)
+		{
+			continue; /* Must be nonzero and positive */
+		}
+		if ((offset + m_headers[i].size) > size)
+		{
+			continue; /* Bogus size value */
+		}
+
+		PHYSFS_seek(handle, offset);
+		m_memblocks[i] = (char*) malloc(m_headers[i].size);
+		if (m_memblocks[i] == NULL)
+		{
+			exit(1); /* Oh god we're out of memory, just bail */
+		}
+		PHYSFS_readBytes(handle, m_memblocks[i], m_headers[i].size);
+		offset += m_headers[i].size;
 	}
 	PHYSFS_close(handle);
 
@@ -121,6 +139,18 @@ bool binaryBlob::unPackBinary(const char* name)
 	}
 
 	return true;
+}
+
+void binaryBlob::clear()
+{
+	for (int i = 0; i < 128; i += 1)
+	{
+		if (m_headers[i].valid)
+		{
+			free(m_memblocks[i]);
+			m_headers[i].valid = false;
+		}
+	}
 }
 
 int binaryBlob::getIndex(const char* _name)
@@ -143,4 +173,20 @@ int binaryBlob::getSize(int _index)
 char* binaryBlob::getAddress(int _index)
 {
 	return m_memblocks[_index];
+}
+
+std::vector<int> binaryBlob::getExtra()
+{
+	std::vector<int> result;
+	for (int i = 0; i < 128; i += 1)
+	{
+		if (m_headers[i].valid
+#define FOREACH_TRACK(track_name) && strcmp(m_headers[i].name, track_name) != 0
+		TRACK_NAMES
+#undef FOREACH_TRACK
+		) {
+			result.push_back(i);
+		}
+	}
+	return result;
 }

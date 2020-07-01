@@ -11,6 +11,20 @@ std::vector<std::string> split(const std::string &s, char delim, std::vector<std
 
 std::vector<std::string> split(const std::string &s, char delim);
 
+bool is_positive_num(const std::string& str, bool hex);
+
+bool endsWith(const std::string& str, const std::string& suffix);
+
+#define INBOUNDS(index, vector) ((int) index >= 0 && (int) index < (int) vector.size())
+
+#define WHINE_ONCE(message) \
+    static bool whine = true; \
+    if (whine) \
+    { \
+        whine = false; \
+        puts(message); \
+    }
+
 
 //helperClass
 class UtilityClass
@@ -39,8 +53,9 @@ public:
     int globaltemp;
     int temp;
     int temp2;
-    std::string tempstring;
     std::vector<int> splitseconds;
 };
+
+extern UtilityClass help;
 
 #endif /* UTILITYCLASS_H */

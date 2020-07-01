@@ -17,23 +17,24 @@ extern "C"
 	);
 }
 
-Screen::Screen()
+void Screen::init()
 {
-    m_window = NULL;
-    m_renderer = NULL;
-    m_screenTexture = NULL;
-    m_screen = NULL;
-    isWindowed = true;
-    stretchMode = 0;
-    isFiltered = false;
-    filterSubrect.x = 1;
-    filterSubrect.y = 1;
-    filterSubrect.w = 318;
-    filterSubrect.h = 238;
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+	m_window = NULL;
+	m_renderer = NULL;
+	m_screenTexture = NULL;
+	m_screen = NULL;
+	isWindowed = true;
+	stretchMode = 0;
+	isFiltered = false;
+	filterSubrect.x = 1;
+	filterSubrect.y = 1;
+	filterSubrect.w = 318;
+	filterSubrect.h = 238;
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 
 	// Uncomment this next line when you need to debug -flibit
 	// SDL_SetHintWithPriority(SDL_HINT_RENDER_DRIVER, "software", SDL_HINT_OVERRIDE);
+	// FIXME: m_renderer is also created in Graphics::processVsync()!
 	SDL_CreateWindowAndRenderer(
 		640,
 		480,
@@ -76,6 +77,7 @@ Screen::Screen()
 		0x000000FF,
 		0xFF000000
 	);
+	// ALSO FIXME: This SDL_CreateTexture() is duplicated in Graphics::processVsync()!
 	m_screenTexture = SDL_CreateTexture(
 		m_renderer,
 		SDL_PIXELFORMAT_ARGB8888,
@@ -84,12 +86,10 @@ Screen::Screen()
 		240
 	);
 
-    badSignalEffect = false;
-
-    glScreen = true;
+	badSignalEffect = false;
 }
 
-void Screen::ResizeScreen(int x , int y)
+void Screen::ResizeScreen(int x, int y)
 {
 	static int resX = 320;
 	static int resY = 240;
@@ -102,11 +102,21 @@ void Screen::ResizeScreen(int x , int y)
 
 	if(!isWindowed)
 	{
-		SDL_SetWindowFullscreen(m_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		int result = SDL_SetWindowFullscreen(m_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		if (result != 0)
+		{
+			printf("Error: could not set the game to fullscreen mode: %s\n", SDL_GetError());
+			return;
+		}
 	}
 	else
 	{
-		SDL_SetWindowFullscreen(m_window, 0);
+		int result = SDL_SetWindowFullscreen(m_window, 0);
+		if (result != 0)
+		{
+			printf("Error: could not set the game to windowed mode: %s\n", SDL_GetError());
+			return;
+		}
 		if (x != -1 && y != -1)
 		{
 			SDL_SetWindowSize(m_window, resX, resY);
@@ -117,15 +127,87 @@ void Screen::ResizeScreen(int x , int y)
 	{
 		int winX, winY;
 		SDL_GetWindowSize(m_window, &winX, &winY);
-		SDL_RenderSetLogicalSize(m_renderer, winX, winY);
-		SDL_RenderSetIntegerScale(m_renderer, SDL_FALSE);
+		int result = SDL_RenderSetLogicalSize(m_renderer, winX, winY);
+		if (result != 0)
+		{
+			printf("Error: could not set logical size: %s\n", SDL_GetError());
+			return;
+		}
+		result = SDL_RenderSetIntegerScale(m_renderer, SDL_FALSE);
+		if (result != 0)
+		{
+			printf("Error: could not set scale: %s\n", SDL_GetError());
+			return;
+		}
 	}
 	else
 	{
 		SDL_RenderSetLogicalSize(m_renderer, 320, 240);
-		SDL_RenderSetIntegerScale(m_renderer, (SDL_bool) (stretchMode == 2));
+		int result = SDL_RenderSetIntegerScale(m_renderer, (SDL_bool) (stretchMode == 2));
+		if (result != 0)
+		{
+			printf("Error: could not set scale: %s\n", SDL_GetError());
+			return;
+		}
 	}
 	SDL_ShowWindow(m_window);
+}
+
+void Screen::ResizeToNearestMultiple()
+{
+	int w, h;
+	GetWindowSize(&w, &h);
+
+	// Check aspect ratio first
+	bool using_width;
+	int usethisdimension, usethisratio;
+
+	if ((float) w / (float) h > 4.0 / 3.0)
+	{
+		// Width is bigger, so it's limited by height
+		usethisdimension = h;
+		usethisratio = 240;
+		using_width = false;
+	}
+	else
+	{
+		// Height is bigger, so it's limited by width. Or we're exactly 4:3 already
+		usethisdimension = w;
+		usethisratio = 320;
+		using_width = true;
+	}
+
+	int floor = (usethisdimension / usethisratio) * usethisratio;
+	int ceiling = floor + usethisratio;
+
+	int final_dimension;
+
+	if (usethisdimension - floor < ceiling - usethisdimension)
+	{
+		// Floor is nearest
+		final_dimension = floor;
+	}
+	else
+	{
+		// Ceiling is nearest. Or we're exactly on a multiple already
+		final_dimension = ceiling;
+	}
+
+	if (final_dimension == 0)
+	{
+		// We're way too small!
+		ResizeScreen(320, 240);
+		return;
+	}
+
+	if (using_width)
+	{
+		ResizeScreen(final_dimension, final_dimension / 4 * 3);
+	}
+	else
+	{
+		ResizeScreen(final_dimension * 4 / 3, final_dimension);
+	}
 }
 
 void Screen::GetWindowSize(int* x, int* y)
@@ -135,30 +217,30 @@ void Screen::GetWindowSize(int* x, int* y)
 
 void Screen::UpdateScreen(SDL_Surface* buffer, SDL_Rect* rect )
 {
-    if((buffer == NULL) && (m_screen == NULL) )
-    {
-        return;
-    }
+	if((buffer == NULL) && (m_screen == NULL) )
+	{
+		return;
+	}
 
-    if(badSignalEffect)
-    {
-        buffer = ApplyFilter(buffer);
-    }
+	if(badSignalEffect)
+	{
+		buffer = ApplyFilter(buffer);
+	}
 
 
-    FillRect(m_screen, 0x000);
-    BlitSurfaceStandard(buffer,NULL,m_screen,rect);
+	FillRect(m_screen, 0x000);
+	BlitSurfaceStandard(buffer,NULL,m_screen,rect);
 
-    if(badSignalEffect)
-    {
-        SDL_FreeSurface(buffer);
-    }
+	if(badSignalEffect)
+	{
+		SDL_FreeSurface(buffer);
+	}
 
 }
 
 const SDL_PixelFormat* Screen::GetFormat()
 {
-    return m_screen->format;
+	return m_screen->format;
 }
 
 void Screen::FlipScreen()
@@ -204,9 +286,4 @@ void Screen::toggleLinearFilter()
 		320,
 		240
 	);
-}
-
-void Screen::ClearScreen( int colour )
-{
-    //FillRect(m_screen, colour) ;
 }

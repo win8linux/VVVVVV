@@ -3,6 +3,7 @@
 
 #include "GraphicsResources.h"
 #include <vector>
+#include <map>
 
 
 
@@ -18,21 +19,24 @@
 #include "GraphicsUtil.h"
 #include "Screen.h"
 
-class map;
-
 class Graphics
 {
 public:
-	Graphics();
+	void init();
 	~Graphics();
 
 	GraphicsResources grphx;
 
+	int bfontlen(uint32_t ch);
+	int font_idx(uint32_t ch);
+
 	void Makebfont();
 
-	void drawhuetile(int x, int y, int t, int c);
+	void drawhuetile(int x, int y, int t);
+	void huetilesetcol(int t);
+	Uint32 bigchunkygetcol(int t);
 
-	void drawgravityline(int t, entityclass& obj);
+	void drawgravityline(int t);
 
 	void MakeTileArray();
 
@@ -42,8 +46,8 @@ public:
 
 	void drawcoloredtile(int x, int y, int t, int r, int g, int b);
 
-	void drawmenu(Game& game, int cr, int cg, int cb, int division = 30);
-	void drawlevelmenu(Game& game, int cr, int cg, int cb, int division = 30);
+	void drawmenu(int cr, int cg, int cb);
+	void drawlevelmenu(int cr, int cg, int cb);
 
 	void processfade();
 
@@ -51,9 +55,7 @@ public:
 
 	void setwarprect(int a, int b, int c, int d);
 
-	void createtextbox(std::string t, int xp, int yp, int r= 255, int g= 255, int b = 255);
-
-	void textboxcleanup();
+	void createtextbox(std::string t, int xp, int yp, int r= 255, int g= 255, int b = 255, bool allowspecial = false);
 
 	void textboxcenter();
 
@@ -84,11 +86,12 @@ public:
 	void drawpixeltextbox(int x, int y, int w, int h, int w2, int h2, int r, int g, int b, int xo, int yo);
 	void drawcustompixeltextbox(int x, int y, int w, int h, int w2, int h2, int r, int g, int b, int xo, int yo);
 
-	void drawcrewman(int x, int y, int t, bool act, UtilityClass& help, bool noshift =false);
+	void drawcrewman(int x, int y, int t, bool act, bool noshift =false);
 
 	int crewcolour(const int t);
 
 	void cutscenebars();
+	void cutscenebarstimer();
 
 	void drawpartimage(int t, int xp, int yp, int wp, int hp);
 
@@ -96,9 +99,11 @@ public:
 
 	void drawimagecol(int t, int xp, int yp, int r, int g, int b, bool cent= false);
 
-	void drawgui(UtilityClass& help);
+	void updatetextboxes();
+	void drawgui();
 
 	void drawsprite(int x, int y, int t, int r, int g, int b);
+	void drawsprite(int x, int y, int t, Uint32 c);
 
 	void printcrewname(int x, int y, int t);
 
@@ -106,34 +111,51 @@ public:
 
 	void printcrewnamedark(int x, int y, int t);
 
+	void map_tab(int opt, const std::string& text, bool selected = false);
+
+	void map_option(int opt, int num_opts, const std::string& text, bool selected = false);
+
 	void Print(int _x, int _y, std::string _s, int r, int g, int b, bool cen = false);
+
+	void PrintAlpha(int _x, int _y, std::string _s, int r, int g, int b, int a, bool cen = false);
 
 	void RPrint(int _x, int _y, std::string _s, int r, int g, int b, bool cen = false);
 
 	void PrintOff(int _x, int _y, std::string _s, int r, int g, int b, bool cen = false);
 
+	void PrintOffAlpha(int _x, int _y, std::string _s, int r, int g, int b, int a, bool cen = false);
+
 	void bprint(int x, int y, std::string t, int r, int g, int b, bool cen = false);
+
+	void bprintalpha(int x, int y, std::string t, int r, int g, int b, int a, bool cen = false);
 
 	int len(std::string t);
 	void bigprint( int _x, int _y, std::string _s, int r, int g, int b, bool cen = false, int sc = 2 );
-	void drawspritesetcol(int x, int y, int t, int c, UtilityClass& help);
+	void drawspritesetcol(int x, int y, int t, int c);
 
 
 	void flashlight();
 	void screenshake();
+	void updatescreenshake();
+
+	int screenshake_x;
+	int screenshake_y;
 
 	void render();
+	void renderwithscreeneffects();
 
-	bool Hitest(SDL_Surface* surface1, point p1, int col, SDL_Surface* surface2, point p2, int col2);
+	bool Hitest(SDL_Surface* surface1, point p1, SDL_Surface* surface2, point p2);
 
-	void drawentities(mapclass& map, entityclass& obj, UtilityClass& help);
+	void drawentities();
 
-	void drawtrophytext(entityclass&, UtilityClass& help);
+	void drawtrophytext();
 
 	void bigrprint(int x, int y, std::string& t, int r, int g, int b, bool cen = false, float sc = 2);
 
 
-	void drawtele(int x, int y, int t, int c, UtilityClass& help);
+	void drawtele(int x, int y, int t, Uint32 c);
+
+	Uint32 getRGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
 
 	Uint32 getRGB(Uint8 r, Uint8 g, Uint8 b);
 
@@ -148,17 +170,16 @@ public:
 
 	void setcolreal(Uint32 t);
 
-	void drawbackground(int t, mapclass& map);
+	void drawbackground(int t);
+	void updatebackground(int t);
 	void drawtile3( int x, int y, int t, int off );
 	void drawentcolours( int x, int y, int t);
-	void drawtile2( int x, int y, int t, int r, int g, int b );
-	void drawtile( int x, int y, int t, int r, int g, int b );
+	void drawtile2( int x, int y, int t );
+	void drawtile( int x, int y, int t );
 	void drawtowertile( int x, int y, int t );
 	void drawtowertile3( int x, int y, int t, int off );
 
-	void drawtile(int x, int y, int t);
-
-	void drawmap(mapclass& map);
+	void drawmap();
 
 	void drawforetile(int x, int y, int t);
 
@@ -168,35 +189,31 @@ public:
 
 	void drawrect(int x, int y, int w, int h, int r, int g, int b);
 
-	void drawtowermap(mapclass& map);
+	void drawtowermap();
 
-	void drawtowermap_nobackground(mapclass& map);
-
-	void drawtowerspikes(mapclass& map);
-
-	void drawtowerentities(mapclass& map, entityclass& obj, UtilityClass& help);
+	void drawtowerspikes();
 
 	bool onscreen(int t);
 
-	void drawtowerbackgroundsolo(mapclass& map);
+	void reloadresources();
+	std::string assetdir;
 
 
 	void menuoffrender();
 
-	void drawtowerbackground(mapclass& map);
+	void drawtowerbackground();
+	void updatetowerbackground();
 
-	void setcol(int t, UtilityClass& help);
-	void drawfinalmap(mapclass & map);
+	void setcol(int t);
+	void drawfinalmap();
 
 	colourTransform ct;
-
-	std::string tempstring;
 
 	int bcol, bcol2, rcol;
 
 
 
-	int j, k, m;
+	int m;
 
 	std::vector <SDL_Surface*> backgrounds;
 	std::vector <SDL_Surface*> images;
@@ -212,16 +229,17 @@ public:
 	std::vector <SDL_Surface*> bfontmask;
 	std::vector <SDL_Surface*> flipbfont;
 	std::vector <SDL_Surface*> flipbfontmask;
-	std::vector <int> bfontlen;
 
 	bool flipmode;
 	bool setflipmode;
+	bool notextoutline;
 	point tl;
 	//buffer objects. //TODO refactor buffer objects
 	SDL_Surface* backBuffer;
 	Screen* screenbuffer;
 	SDL_Surface* menubuffer;
 	SDL_Surface* towerbuffer;
+	SDL_Surface* towerbuffer_lerp;
 	SDL_Surface* foregroundBuffer;
 	SDL_Surface* tempBuffer;
 
@@ -237,12 +255,14 @@ public:
 	SDL_Rect foot_rect;
 	SDL_Rect prect;
 	SDL_Rect footerrect;
+	SDL_Surface* footerbuffer;
 
 	int linestate, linedelay;
 	int backoffset;
 	bool backgrounddrawn, foregrounddrawn;
 
 	int menuoffset;
+	int oldmenuoffset;
 	bool resumegamemode;
 
 	SDL_Rect warprect;
@@ -252,16 +272,17 @@ public:
 
 	int fademode;
 	int fadeamount;
+	int oldfadeamount;
 	std::vector <int> fadebars;
 
 	bool trinketcolset;
 	int trinketr, trinketg, trinketb;
 
 	std::vector <textboxclass> textbox;
-	int ntextbox;
 
 	bool showcutscenebars;
 	int cutscenebarspos;
+	int oldcutscenebarspos;
 
 	std::vector<SDL_Rect> stars;
 	std::vector<int> starsspeed;
@@ -271,10 +292,45 @@ public:
 	std::vector<int> backboxvx;
 	std::vector<int> backboxvy;
 	std::vector<float> backboxint;
-	SDL_Rect backboxrect;
 
 	int warpskip, warpfcol, warpbcol;
 
+	bool translucentroomname;
+
+	bool showmousecursor;
+
+	std::map<int, int> font_positions;
+
+	SDL_Surface* ghostbuffer;
+
+	float inline lerp(const float v0, const float v1)
+	{
+		return v0 + alpha * (v1 - v0);
+	}
+	float alpha;
+
+	Uint32 col_crewred;
+	Uint32 col_crewyellow;
+	Uint32 col_crewgreen;
+	Uint32 col_crewcyan;
+	Uint32 col_crewblue;
+	Uint32 col_crewpurple; //actually pink
+	Uint32 col_crewinactive;
+	Uint32 col_clock;
+	Uint32 col_trinket;
+	int col_tr;
+	int col_tg;
+	int col_tb;
+	void updatetitlecolours();
+
+	bool kludgeswnlinewidth;
+
+	Uint32 crewcolourreal(int t);
+
+	bool vsync;
+	void processVsync();
 };
+
+extern Graphics graphics;
 
 #endif /* GRAPHICS_H */
